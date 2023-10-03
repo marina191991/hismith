@@ -1,0 +1,436 @@
+openapi: 3.0.0
+info:
+  title: API HiSmith
+  version: 1.0.0
+  description: >-
+    API для HiSmith. Все запросы и ответы представлены в формате JSON.
+servers:
+  - url: http://localhost:8080/api
+    description: for dev
+
+paths:
+
+  ### Dictionaries
+
+  /auth/login:
+    post:
+      tags:
+        - Authorization
+      summary: User authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLoginResponse'
+        '422':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /loan_applications:
+    get:
+      tags:
+        - Loan application
+      summary: Get a list of loan applications.
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            format: int32
+          description: Limit the number of loan applications returned.
+          required: false
+        - in: query
+          name:  offset
+          schema:
+            type: integer
+            format: int32
+          description: The number of loan applications to skip before starting to collect the result set.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanApplicationIndexResponse'
+        '422':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: [ ]
+
+    post:
+      tags:
+        - Loan application
+      summary: Create a new loan application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanApplicationStoreRequest'
+      responses:
+        '201':
+          description: Success created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanApplicationStoreResponse'
+        '422':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: [ ]
+
+  /loan_applications/{loan_application}:
+    get:
+      tags:
+        - Loan application
+      summary: Get the loan application by ID
+      parameters:
+        - name: loan_application
+          in: path
+          description: ID of the loan application
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanApplicationShowResponse'
+      security:
+        - BearerAuth: [ ]
+    delete:
+      tags:
+        - Loan application
+      summary: Delete the loan application by ID
+      parameters:
+        - name: loan_application
+          in: path
+          description: ID of the loan application
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanApplicationDeleteResponse'
+      security:
+        - BearerAuth: [ ]
+
+  /loan_applications/{loan_application}/update:
+    post:
+      tags:
+        - Loan application
+      summary: Update the loan application by ID
+      parameters:
+        - name: loan_application
+          in: path
+          description: ID of the loan application
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanApplicationUpdateRequest'
+      responses:
+        '200':
+          description: Success update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanApplicationUpdateResponse'
+        '422':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - BearerAuth: [ ]
+
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    ###########################
+    #### Responses
+    ###########################
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Token for user authorization
+          example: >-
+            1|65JxdbeDaNwWeoMOTOQynyV5E4lHdLReu4iAnW6w
+
+    LoanApplicationIndexResponse:
+      type: object
+      properties:
+        loan_applications:
+          type: array
+          items:
+            $ref: '#/components/schemas/LoanApplicationResource'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+
+    LoanApplicationStoreResponse:
+      type: object
+      properties:
+        loan_applications:
+          $ref: '#/components/schemas/LoanApplicationResource'
+
+    LoanApplicationShowResponse:
+      type: object
+      properties:
+        loan_applications:
+          $ref: '#/components/schemas/LoanApplicationResource'
+
+    LoanApplicationUpdateResponse:
+      type: object
+      properties:
+        loan_applications:
+          $ref: '#/components/schemas/LoanApplicationResource'
+
+    LoanApplicationDeleteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'Loan application deleted successfully'
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Общая информация об ошибке
+        errors:
+          type: object
+          properties:
+            field:
+              type: array
+              items:
+                type: string
+              description: Детализированная информация об ошибке
+
+    ErrorLoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: пароль и логин не принадлежат ни одному пользователю
+          example: "Bad Credentials"
+
+
+    ###########################
+    #### Resources
+    ###########################
+
+    LoanApplicationResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          example: 1
+          description: The ID of the loan application
+        dealer_id:
+          type: integer
+          format: int32
+          example: 23
+          description: The ID of the dealer
+        dealer_employee_id:
+          type: integer
+          format: int32
+          example: 10
+          description: The ID of the dealer employee
+        bank_id:
+          type: integer
+          format: int32
+          example: 9
+          description: The ID of the bank
+        amount:
+          type: number
+          format: float
+          example: 5678.80
+          description: The amount of credit.
+        term:
+          type: integer
+          example: 12
+          description: The credit term
+        interest_rate:
+          type: number
+          format: float
+          example: 89.01
+          description: The interest rate of credit
+        reason_description:
+          type: string
+          example: "car loan"
+          description: The reason description of credit
+        status:
+          type: string
+          enum:
+            - new
+            - accepted
+            - declined
+            - on review
+          example: "new"
+
+    Pagination:
+      type: object
+      properties:
+        limit:
+          type: integer
+          format: int32
+          nullable: true
+          example: 5
+        offset:
+          type: integer
+          format: int32
+          nullable: true
+          example: 1
+        total:
+          type: integer
+          format: int64
+          example: 1
+
+
+    ###########################
+    #### Requests
+    ###########################
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: ivan@example.com
+        password:
+          type: string
+          example: password123
+      required:
+        - email
+        - password
+
+
+    LoanApplicationUpdateRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: The ID of the loan application
+        dealer_id:
+          type: integer
+          example: 23
+          description: The ID of the dealer
+        dealer_employee_id:
+          type: integer
+          example: 10
+          description: The ID of the dealer employee
+        bank_id:
+          type: integer
+          example: 9
+          description: The ID of the bank
+        amount:
+          type: number
+          format: float
+          example: 5678.80
+          description: The amount of credit
+        term:
+          type: integer
+          example: 12
+          description: The credit term
+        interest_rate:
+          type: number
+          format: float
+          example: 89.01
+          description: The interest rate of credit
+        reason_description:
+          type: string
+          example: "car loan"
+          description: The reason description of credit
+        status:
+          type: string
+          enum:
+            - new
+            - accepted
+            - declined
+            - on_review
+          example: "accepted"
+
+
+    LoanApplicationStoreRequest:
+      type: object
+      properties:
+        dealer_employee_id:
+          type: integer
+          example: 12
+        bank_id:
+          type: integer
+          example: 6
+        amount:
+          type: number
+          format: float
+          example: 5678.8
+        term:
+          type: integer
+          example: 12
+        interest_rate:
+          type: number
+          format: float
+          example: 89.01
+        reason_description:
+          type: string
+          example: "car loan"
+      required:
+        - dealer_employee_id
+        - reason_description
+        - interest_rate
+        - term
+        - amount
+        - bank_id
+
+
+
+
